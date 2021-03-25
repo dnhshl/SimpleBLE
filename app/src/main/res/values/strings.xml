@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SimpleBLE</string>
+    <string name="bt_not_available">Kein Bluetooth verfügbar!</string>
+    <string name="ble_not_supported">Kein Bluetooth Low Energy verfügbar!</string>
+</resources>
