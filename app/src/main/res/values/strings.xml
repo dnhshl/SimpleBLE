@@ -2,4 +2,6 @@
     <string name="app_name">SimpleBLE</string>
     <string name="bt_not_available">Kein Bluetooth verfügbar!</string>
     <string name="ble_not_supported">Kein Bluetooth Low Energy verfügbar!</string>
+    <string name="start_search_device">Start suche Geräte</string>
+    <string name="stop_search_device">Stopp suche Geräte</string>
 </resources>
