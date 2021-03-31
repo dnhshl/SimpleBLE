@@ -4,4 +4,5 @@
     <string name="ble_not_supported">Kein Bluetooth Low Energy verfügbar!</string>
     <string name="start_search_device">Start suche Geräte</string>
     <string name="stop_search_device">Stopp suche Geräte</string>
+    <string name="selected_device">ausgewähltes Device:</string>
 </resources>
