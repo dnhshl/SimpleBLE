@@ -10,10 +10,8 @@ import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.ListView
-import android.widget.Toast
+import android.view.View
+import android.widget.*
 import splitties.toast.toast
 
 class MainActivity : AppCompatActivity() {
@@ -22,11 +20,22 @@ class MainActivity : AppCompatActivity() {
 
     private val btnDiscoverDevices : Button by lazy{ findViewById(R.id.buttonDiscoverDevices) }
     private val listview: ListView by lazy { findViewById(R.id.listview) }
+    private val tvSelectedDeviceTitle: TextView by lazy{ findViewById(R.id.tvSelectedDevice1) }
+    private val tvSelectedDevice: TextView by lazy{ findViewById(R.id.tvSelectedDevice2) }
+    private val btnConnect: Button by lazy{ findViewById(R.id.buttonConnect) }
+    private val tvConnected: TextView by lazy{ findViewById(R.id.tvConnect) }
+    private val btnData: Button by lazy{ findViewById(R.id.buttonData) }
+    private val tvData: TextView by lazy{ findViewById(R.id.tvData) }
+    private val btnLED: Button by lazy{ findViewById(R.id.buttonLED) }
+    private val tvLED: TextView by lazy{ findViewById(R.id.tvLED) }
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanner: BluetoothLeScanner
 
+    private lateinit var selectedDevice: String
+    private lateinit var deviceAddress: String
     private var isScanning = false
+    private var deviceIsSelected = false
 
     private var discoveredDevices = arrayListOf<String>()
 
@@ -68,7 +77,37 @@ class MainActivity : AppCompatActivity() {
                 btnDiscoverDevices.text = getString(R.string.start_search_device)
             }
         }
+
+        btnConnect.setOnClickListener {
+
+        }
+
+        btnLED.setOnClickListener {
+
+        }
+
+        btnData.setOnClickListener {
+
+        }
+
+        listview.onItemClickListener = lvClickListener
     }
+
+    private val lvClickListener =
+        AdapterView.OnItemClickListener { parent, view, position, id -> // Gerät aus dem Listview auswählen
+            if (isScanning) {
+                scanner.stopScan(scanCallback)
+                isScanning = false
+                btnDiscoverDevices.text = getText(R.string.start_search_device)
+            }
+            selectedDevice = (view as TextView).text.toString()
+            deviceAddress = selectedDevice.substring(selectedDevice.length - 17)
+            tvSelectedDeviceTitle.visibility = View.VISIBLE
+            tvSelectedDevice.visibility = View.VISIBLE
+            tvSelectedDevice.text = selectedDevice
+            deviceIsSelected = true
+            btnConnect.isEnabled = true
+        }
 
     override fun onResume() {
         super.onResume()
