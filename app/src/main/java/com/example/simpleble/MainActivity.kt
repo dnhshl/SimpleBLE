@@ -2,6 +2,7 @@ package com.example.simpleble
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -14,6 +15,7 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import splitties.toast.toast
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,12 +35,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanner: BluetoothLeScanner
     private var bluetoothLeService: BluetoothLeService? = null
+    private lateinit var gattCharacteristic: BluetoothGattCharacteristic
 
     private lateinit var selectedDevice: String
     private lateinit var deviceAddress: String
     private var isScanning = false
     private var deviceIsSelected = false
     private var isConnected = false
+    private var isOnLED = false
 
     private var discoveredDevices = arrayListOf<String>()
 
@@ -91,11 +95,39 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnConnect.setOnClickListener {
-
+            // Button Logik und connect bzw disconnect
+            if (isConnected) {
+                bluetoothLeService!!.disconnect()
+                isConnected = false
+                tvConnected.text = getString(R.string.bt_connect_off)
+            } else {
+                bluetoothLeService!!.connect(deviceAddress)
+            }
         }
 
         btnLED.setOnClickListener {
+            // Button Logik und 'H' bzw 'L' senden
+            val value = ByteArray(1)
+            // Werte setzen
+            if (isOnLED) {
+                isOnLED = false
+                btnLED.text = getString(R.string.bt_led_on)
+                tvLED.text = getString(R.string.led_off)
+                value[0] = 'L'.toByte()
+            } else {
+                isOnLED = true
+                btnLED.text = getString(R.string.bt_led_off)
+                tvLED.text = getString(R.string.led_on)
+                value[0] = 'H'.toByte()
+            }
 
+            // Senden
+            if (gattCharacteristic != null) {
+                gattCharacteristic.value = value
+                bluetoothLeService!!.writeCharacteristic(gattCharacteristic)
+            } else {
+                toast(getString(R.string.no_gatt))
+            }
         }
 
         btnData.setOnClickListener {
@@ -198,8 +230,18 @@ class MainActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent) {
             val action = intent.action
             if (BluetoothLeService.ACTION_GATT_CONNECTED == action) {
+                isConnected = true
+                tvConnected.setText(R.string.connected)
+                btnData.isEnabled = true
+                btnLED.isEnabled = true
+                btnDiscoverDevices.isEnabled = false
                 Log.i(TAG, "connected")
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED == action) {
+                isConnected = false
+                tvConnected.setText(R.string.disconnected)
+                btnData.isEnabled = false
+                btnLED.isEnabled = false
+                btnDiscoverDevices.isEnabled = true
                 Log.i(TAG, "disconnected")
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED == action) {
                 Log.i(TAG, "services discovered")
@@ -207,6 +249,13 @@ class MainActivity : AppCompatActivity() {
 
                 // alle Services und Characteristics im Log aussgeben
                 for (gattService in bluetoothLeService!!.getSupportedGattServices()!!) {
+
+                    // Wir merken uns die Characteristic, über die wir kommunizieren
+                    if (gattService!!.uuid.toString() == BluetoothLeService.GATT_SERVICE_UUID) {
+                        gattCharacteristic = gattService.getCharacteristic(
+                                UUID.fromString(BluetoothLeService.GATT_CHARACTERISTIC_UUID))
+                        Log.i(TAG, "GATT_SERVICE_UUID gefunden")
+                    }
                     Log.i(TAG, "Gatt Service: " + gattService!!.uuid.toString())
                     for (gattCharacteristic in gattService.characteristics) {
                         Log.i(TAG, "Gatt Characteristic: " + gattCharacteristic.uuid.toString())

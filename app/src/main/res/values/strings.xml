@@ -5,4 +5,12 @@
     <string name="start_search_device">Start suche Geräte</string>
     <string name="stop_search_device">Stopp suche Geräte</string>
     <string name="selected_device">ausgewähltes Device:</string>
+    <string name="bt_connect_off">Getrennt</string>
+    <string name="connected">verbunden</string>
+    <string name="disconnected">nicht verbunden</string>
+    <string name="bt_led_on">LED anschalten</string>
+    <string name="bt_led_off">LED ausschalten</string>
+    <string name="led_on">LED ist an</string>
+    <string name="led_off">LED ist aus</string>
+    <string name="no_gatt">Keine GATT Characteristic!</string>
 </resources>
