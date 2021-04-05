@@ -15,6 +15,7 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import splitties.toast.toast
+import java.nio.charset.StandardCharsets
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -43,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private var deviceIsSelected = false
     private var isConnected = false
     private var isOnLED = false
+    private var isReceivingData = false
 
     private var discoveredDevices = arrayListOf<String>()
 
@@ -131,7 +133,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnData.setOnClickListener {
-
+            if (isReceivingData) {
+                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic, false);
+                isReceivingData = false;
+                btnData.text = getString(R.string.bt_data_on);
+                tvData.setText(R.string.no_data);
+            } else {
+                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic, true);
+                isReceivingData = true;
+                btnData.text = getString(R.string.bt_data_off);
+            }
         }
 
         listview.onItemClickListener = lvClickListener
@@ -262,7 +273,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE == action) {
-                Log.i(TAG, intent.getStringExtra(BluetoothLeService.EXTRA_DATA)!!)
+                // neue Daten verfügbar
+                Log.i(TAG, "Data available")
+                val bytes: ByteArray = gattCharacteristic.value
+                // byte[] to string
+                val s = String(bytes, StandardCharsets.UTF_8)
+                tvData.text = s
             }
         }
     }
