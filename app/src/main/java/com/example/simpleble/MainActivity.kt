@@ -5,10 +5,13 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.view.View
 import android.widget.*
@@ -31,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanner: BluetoothLeScanner
+    private var bluetoothLeService: BluetoothLeService? = null
 
     private lateinit var selectedDevice: String
     private lateinit var deviceAddress: String
@@ -63,6 +67,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         scanner = bluetoothAdapter.bluetoothLeScanner
+
+        // BluetoothLe Service starten
+        val gattServiceIntent = Intent(this, BluetoothLeService::class.java)
+        // Service anbinden
+        bindService(gattServiceIntent, serviceConnection, BIND_AUTO_CREATE)
 
         btnDiscoverDevices.setOnClickListener {
 
@@ -156,4 +165,22 @@ class MainActivity : AppCompatActivity() {
         // Aufräumen
         scanner.stopScan(scanCallback)
     }
+
+    // BluetoothLE Service Anbindung
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(componentName: ComponentName, service: IBinder) {
+            // Variable zum Zugriff auf die Service-Methoden
+            bluetoothLeService = (service as BluetoothLeService.LocalBinder).getService()
+            if (!bluetoothLeService!!.initialize()) {
+                Log.e(TAG, "Unable to initialize Bluetooth")
+                finish()
+            }
+        }
+
+        override fun onServiceDisconnected(componentName: ComponentName) {
+            bluetoothLeService = null
+        }
+    }
 }
+
+
