@@ -5,9 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -40,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var deviceAddress: String
     private var isScanning = false
     private var deviceIsSelected = false
+    private var isConnected = false
 
     private var discoveredDevices = arrayListOf<String>()
 
@@ -128,6 +127,16 @@ class MainActivity : AppCompatActivity() {
             val turnBTOn = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(turnBTOn, 1)
         }
+        registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter());
+        if (bluetoothLeService != null && isConnected) {
+            var result = bluetoothLeService!!.connect(deviceAddress);
+            Log.d(TAG, "Connect request result=" + result);
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(gattUpdateReceiver)
     }
 
     private val scanCallback = object : ScanCallback() {
@@ -164,6 +173,9 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         // Aufräumen
         scanner.stopScan(scanCallback)
+        bluetoothLeService!!.disconnect()
+        unbindService(serviceConnection)
+        bluetoothLeService = null
     }
 
     // BluetoothLE Service Anbindung
@@ -180,6 +192,40 @@ class MainActivity : AppCompatActivity() {
         override fun onServiceDisconnected(componentName: ComponentName) {
             bluetoothLeService = null
         }
+    }
+
+    private val gattUpdateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent) {
+            val action = intent.action
+            if (BluetoothLeService.ACTION_GATT_CONNECTED == action) {
+                Log.i(TAG, "connected")
+            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED == action) {
+                Log.i(TAG, "disconnected")
+            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED == action) {
+                Log.i(TAG, "services discovered")
+
+
+                // alle Services und Characteristics im Log aussgeben
+                for (gattService in bluetoothLeService!!.getSupportedGattServices()!!) {
+                    Log.i(TAG, "Gatt Service: " + gattService!!.uuid.toString())
+                    for (gattCharacteristic in gattService.characteristics) {
+                        Log.i(TAG, "Gatt Characteristic: " + gattCharacteristic.uuid.toString())
+                    }
+                }
+            } else if (BluetoothLeService.ACTION_DATA_AVAILABLE == action) {
+                Log.i(TAG, intent.getStringExtra(BluetoothLeService.EXTRA_DATA)!!)
+            }
+        }
+    }
+
+
+    private fun makeGattUpdateIntentFilter(): IntentFilter? {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED)
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED)
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED)
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE)
+        return intentFilter
     }
 }
 
