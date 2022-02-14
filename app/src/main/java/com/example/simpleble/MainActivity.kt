@@ -14,8 +14,11 @@ import android.os.IBinder
 import android.util.Log
 import android.view.View
 import android.widget.*
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 import splitties.toast.toast
-import java.nio.charset.StandardCharsets
+import java.io.IOException
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -30,8 +33,10 @@ class MainActivity : AppCompatActivity() {
     private val tvConnected: TextView by lazy{ findViewById(R.id.tvConnect) }
     private val btnData: Button by lazy{ findViewById(R.id.buttonData) }
     private val tvData: TextView by lazy{ findViewById(R.id.tvData) }
+    private val tvArray: TextView by lazy{ findViewById(R.id.tvArray) }
     private val btnLED: Button by lazy{ findViewById(R.id.buttonLED) }
     private val tvLED: TextView by lazy{ findViewById(R.id.tvLED) }
+    private val btnLEDFlash: Button by lazy{ findViewById(R.id.buttonLEDFlash) }
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanner: BluetoothLeScanner
@@ -52,9 +57,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
         btnConnect.isEnabled = false
         btnData.isEnabled = false
         btnLED.isEnabled = false
+        btnLEDFlash.isEnabled = false
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         if(bluetoothAdapter == null)
@@ -84,7 +91,6 @@ class MainActivity : AppCompatActivity() {
 
             if (!isScanning) { // Suche ist nicht gestartet
                 scanner.startScan(scanCallback)
-                //scanner?.startScan(scanCallback)
                 Log.i(TAG, "Starte Scan")
                 isScanning = true
                 btnDiscoverDevices.text = getString(R.string.stop_search_device)
@@ -108,24 +114,60 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnLED.setOnClickListener {
-            // Button Logik und 'H' bzw 'L' senden
-            val value = ByteArray(1)
+            val obj = JSONObject()
             // Werte setzen
             if (isOnLED) {
                 isOnLED = false
                 btnLED.text = getString(R.string.bt_led_on)
                 tvLED.text = getString(R.string.led_off)
-                value[0] = 'L'.toByte()
+                try{
+                    obj.put("LED", "L")
+                }catch (e: IOException){
+                    e.printStackTrace()
+                    toast(e.localizedMessage!!)
+                }
             } else {
                 isOnLED = true
                 btnLED.text = getString(R.string.bt_led_off)
                 tvLED.text = getString(R.string.led_on)
-                value[0] = 'H'.toByte()
+                try {
+                    obj.put("LED", "H");
+                }catch (e: IOException) {
+                    e.printStackTrace()
+                    toast(e.localizedMessage!!)
+                }
             }
 
             // Senden
             if (gattCharacteristic != null) {
-                gattCharacteristic.value = value
+                gattCharacteristic.value = obj.toString().toByteArray()
+                bluetoothLeService!!.writeCharacteristic(gattCharacteristic)
+            } else {
+                toast(getString(R.string.no_gatt))
+            }
+        }
+
+        btnLEDFlash.setOnClickListener {
+            val obj = JSONObject()
+            val arr = JSONArray()
+
+            try {
+                arr.put(0, "H")
+                arr.put(1, "L")
+                arr.put(2, "H")
+                arr.put(3, "L")
+                arr.put(4, "H")
+                arr.put(5, "L")
+
+                obj.put("array", arr)
+            }catch (e: IOException) {
+                e.printStackTrace()
+                toast(e.localizedMessage!!)
+            }
+
+            // Senden
+            if (gattCharacteristic != null) {
+                gattCharacteristic.value = obj.toString().toByteArray()
                 bluetoothLeService!!.writeCharacteristic(gattCharacteristic)
             } else {
                 toast(getString(R.string.no_gatt))
@@ -138,6 +180,7 @@ class MainActivity : AppCompatActivity() {
                 isReceivingData = false;
                 btnData.text = getString(R.string.bt_data_on);
                 tvData.setText(R.string.no_data);
+                tvArray.setText(R.string.no_data);
             } else {
                 bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic, true);
                 isReceivingData = true;
@@ -245,6 +288,7 @@ class MainActivity : AppCompatActivity() {
                 tvConnected.setText(R.string.connected)
                 btnData.isEnabled = true
                 btnLED.isEnabled = true
+                btnLEDFlash.isEnabled = true
                 btnDiscoverDevices.isEnabled = false
                 Log.i(TAG, "connected")
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED == action) {
@@ -252,6 +296,7 @@ class MainActivity : AppCompatActivity() {
                 tvConnected.setText(R.string.disconnected)
                 btnData.isEnabled = false
                 btnLED.isEnabled = false
+                btnLEDFlash.isEnabled = false
                 btnDiscoverDevices.isEnabled = true
                 Log.i(TAG, "disconnected")
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED == action) {
@@ -277,9 +322,31 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Data available")
                 val bytes: ByteArray = gattCharacteristic.value
                 // byte[] to string
-                val s = String(bytes, StandardCharsets.UTF_8)
-                tvData.text = s
+                val s = String(bytes)
+                toast(s)
+                parseJSONData(s)
             }
+        }
+    }
+
+    private fun parseJSONData(jsonString : String) {
+        try {
+            val obj = JSONObject(jsonString)
+            //extrahieren des Objektes data
+            val dataObj = obj.getInt("poti")
+
+            tvData.text = dataObj.toString()
+
+            //Array Ausgabe
+            val parentArray = obj.getJSONArray("potiArray");
+            val value1 = parentArray.getInt(0);
+            val value2 = parentArray.getInt(1);
+            val value3 = parentArray.getInt(2);
+            tvArray.text = "$value1 , $value2 , $value3"
+
+
+        } catch (e : JSONException) {
+            e.printStackTrace()
         }
     }
 

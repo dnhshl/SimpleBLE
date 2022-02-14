@@ -46,6 +46,7 @@ class BluetoothLeService : Service() {
                 intentAction = ACTION_GATT_CONNECTED
                 mConnectionState = STATE_CONNECTED
                 broadcastUpdate(intentAction)
+                mBluetoothGatt!!.requestMtu(517)
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
                 refreshDeviceCache(mBluetoothGatt!!, true)
