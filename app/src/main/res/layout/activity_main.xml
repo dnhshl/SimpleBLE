@@ -6,12 +6,23 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <android.widget.Button
+        android:id="@+id/buttonLEDFlash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/custom_button"
+        android:text="@string/led_flash"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonLED" />
+
     <TextView
         android:id="@+id/tvLED"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="40dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="60dp"
         android:text="LED ist aus"
         app:layout_constraintStart_toEndOf="@+id/buttonLED"
         app:layout_constraintTop_toBottomOf="@+id/tvData" />
@@ -20,18 +31,28 @@
         android:id="@+id/tvData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="40dp"
         android:text="Aktuell keine Daten"
         app:layout_constraintStart_toEndOf="@+id/buttonData"
         app:layout_constraintTop_toBottomOf="@+id/tvConnect" />
+
+    <TextView
+        android:id="@+id/tvArray"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="5dp"
+        android:text="Aktuell keine Daten"
+        app:layout_constraintStart_toEndOf="@+id/buttonData"
+        app:layout_constraintTop_toBottomOf="@+id/tvData" />
 
     <TextView
         android:id="@+id/tvConnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="40dp"
-        android:layout_marginTop="60dp"
+        android:layout_marginTop="30dp"
         android:text="nicht verbunden"
         app:layout_constraintStart_toEndOf="@+id/buttonConnect"
         app:layout_constraintTop_toBottomOf="@+id/tvSelectedDevice1" />
@@ -52,9 +73,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="25dp"
-        android:layout_marginTop="50dp"
-        android:text="Verbinden/Trennen"
+        android:layout_marginTop="20dp"
         android:background="@drawable/custom_button"
+        android:text="Verbinden/Trennen"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvSelectedDevice1" />
 
@@ -91,7 +112,7 @@
     <ListView
         android:id="@+id/listview"
         android:layout_width="wrap_content"
-        android:layout_height="160dp"
+        android:layout_height="100dp"
         android:layout_marginTop="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
