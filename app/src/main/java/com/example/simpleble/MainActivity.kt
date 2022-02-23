@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private val btnLED: Button by lazy{ findViewById(R.id.buttonLED) }
     private val tvLED: TextView by lazy{ findViewById(R.id.tvLED) }
     private val btnLEDFlash: Button by lazy{ findViewById(R.id.buttonLEDFlash) }
+    private val tvFlash : TextView by lazy { findViewById(R.id.tvFlash) }
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanner: BluetoothLeScanner
@@ -49,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private var deviceIsSelected = false
     private var isConnected = false
     private var isOnLED = false
+    private var ledFlashing = false
     private var isReceivingData = false
 
     private var discoveredDevices = arrayListOf<String>()
@@ -115,23 +117,27 @@ class MainActivity : AppCompatActivity() {
 
         btnLED.setOnClickListener {
             val obj = JSONObject()
+            isOnLED = !isOnLED
+            ledFlashing = false
             // Werte setzen
             if (isOnLED) {
-                isOnLED = false
-                btnLED.text = getString(R.string.bt_led_on)
-                tvLED.text = getString(R.string.led_off)
+                btnLED.text = getString(R.string.bt_led_off)
+                tvLED.text = getString(R.string.led_on)
+                btnLEDFlash.text = getString(R.string.led_flash_on)
+                tvFlash.text = getString(R.string.flash_off)
                 try{
-                    obj.put("LED", "L")
+                    obj.put("LED", "H")
+                    obj.put("LEDBlinken", false)
                 }catch (e: IOException){
                     e.printStackTrace()
                     toast(e.localizedMessage!!)
                 }
             } else {
-                isOnLED = true
-                btnLED.text = getString(R.string.bt_led_off)
-                tvLED.text = getString(R.string.led_on)
+                btnLED.text = getString(R.string.bt_led_on)
+                tvLED.text = getString(R.string.led_off)
                 try {
-                    obj.put("LED", "H");
+                    obj.put("LED", "L")
+                    obj.put("LEDBlinken", false)
                 }catch (e: IOException) {
                     e.printStackTrace()
                     toast(e.localizedMessage!!)
@@ -149,20 +155,30 @@ class MainActivity : AppCompatActivity() {
 
         btnLEDFlash.setOnClickListener {
             val obj = JSONObject()
-            val arr = JSONArray()
-
-            try {
-                arr.put(0, "H")
-                arr.put(1, "L")
-                arr.put(2, "H")
-                arr.put(3, "L")
-                arr.put(4, "H")
-                arr.put(5, "L")
-
-                obj.put("array", arr)
-            }catch (e: IOException) {
-                e.printStackTrace()
-                toast(e.localizedMessage!!)
+            ledFlashing = !ledFlashing
+            isOnLED = false
+            if(ledFlashing) {
+                try {
+                    obj.put("LEDBlinken", true)
+                    obj.put("LED", "L")
+                    btnLEDFlash.text = getString(R.string.led_flash_off)
+                    tvFlash.text = getString(R.string.flash_on)
+                    btnLED.text = getString(R.string.bt_led_on)
+                    tvLED.text = getString(R.string.led_off)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    toast(e.localizedMessage!!)
+                }
+            }else{
+                try {
+                    obj.put("LEDBlinken", false)
+                    obj.put("LED", "L")
+                    btnLEDFlash.text = getString(R.string.led_flash_on)
+                    tvFlash.text = getString(R.string.flash_off)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    toast(e.localizedMessage!!)
+                }
             }
 
             // Senden
