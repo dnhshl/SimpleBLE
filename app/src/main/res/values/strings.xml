@@ -12,7 +12,10 @@
     <string name="bt_led_off">LED ausschalten</string>
     <string name="led_on">LED ist an</string>
     <string name="led_off">LED ist aus</string>
-    <string name="led_flash">LED blinken</string>
+    <string name="led_flash_on">Blinken anschalten</string>
+    <string name="led_flash_off">Blinken ausschalten</string>
+    <string name="flash_on">Blinken ist an</string>
+    <string name="flash_off">Blinken ist aus</string>
     <string name="no_gatt">Keine GATT Characteristic!</string>
     <string name="bt_data_on">Daten empfangen AN</string>
     <string name="bt_data_off">Daten empfangen AUS</string>

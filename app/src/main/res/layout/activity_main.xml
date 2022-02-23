@@ -13,7 +13,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="20dp"
         android:background="@drawable/custom_button"
-        android:text="@string/led_flash"
+        android:text="@string/led_flash_on"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonLED" />
 
@@ -128,4 +128,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:background="@drawable/custom_button"/>
+
+    <TextView
+        android:id="@+id/tvFlash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:text="@string/flash_off"
+        app:layout_constraintBottom_toBottomOf="@+id/buttonLEDFlash"
+        app:layout_constraintStart_toEndOf="@+id/buttonLEDFlash"
+        app:layout_constraintTop_toTopOf="@+id/buttonLEDFlash" />
 </androidx.constraintlayout.widget.ConstraintLayout>
