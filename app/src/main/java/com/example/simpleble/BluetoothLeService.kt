@@ -28,6 +28,8 @@ class BluetoothLeService : Service() {
         val ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED"
         val ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED"
         val ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
+        val ACTION_GATT_ESP32_CHARACTERISTIC_DISCOVERED =
+            "com.example.bluetooth.le.ACTION_GATT_ESP32_CHARACTERISTIC_DISCOVERED"
         val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
         val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
 
@@ -66,6 +68,8 @@ class BluetoothLeService : Service() {
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED)
+                // Speziell für E32 GATT Characteristik
+                broadcastUpdate(ACTION_GATT_ESP32_CHARACTERISTIC_DISCOVERED)
             } else {
                 Log.w(TAG, "onServicesDiscovered received: $status")
             }
@@ -267,6 +271,19 @@ class BluetoothLeService : Service() {
     fun getSupportedGattServices(): List<BluetoothGattService?>? {
         return if (mBluetoothGatt == null) null else mBluetoothGatt!!.getServices()
     }
+
+    // Speziell bei Verwendung vom ESP32
+    fun getGattCharacteristic(): BluetoothGattCharacteristic? {
+        for (gattService in getSupportedGattServices()!!) {
+            if (gattService!!.uuid.toString() == BluetoothLeService.GATT_SERVICE_UUID) {
+                return gattService.getCharacteristic(
+                    UUID.fromString(BluetoothLeService.GATT_CHARACTERISTIC_UUID))
+            }
+        }
+        return null
+    }
+
+
 
     // Diese Funktion ist wichtig, wenn beim ESP32 eigendefinierte Services verwendet werden.
     // Ändern sich diese, wurde das gleiche Gerät aber vorher schon einmal mit anderen Services genutzt,

@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanner: BluetoothLeScanner
     private var bluetoothLeService: BluetoothLeService? = null
-    private lateinit var gattCharacteristic: BluetoothGattCharacteristic
+    private var gattCharacteristic: BluetoothGattCharacteristic? = null
 
     private lateinit var selectedDevice: String
     private lateinit var deviceAddress: String
@@ -87,7 +87,6 @@ class MainActivity : AppCompatActivity() {
         bindService(gattServiceIntent, serviceConnection, BIND_AUTO_CREATE)
 
         btnDiscoverDevices.setOnClickListener {
-
             checkBTPermission()
 
             if (!isScanning) { // Suche ist nicht gestartet
@@ -131,10 +130,8 @@ class MainActivity : AppCompatActivity() {
 
             // Senden
             if (gattCharacteristic != null) {
-                gattCharacteristic.value = obj.toString().toByteArray()
+                gattCharacteristic!!.value = obj.toString().toByteArray()
                 bluetoothLeService!!.writeCharacteristic(gattCharacteristic)
-            } else {
-                toast(getString(R.string.no_gatt))
             }
         }
 
@@ -154,22 +151,20 @@ class MainActivity : AppCompatActivity() {
 
             // Senden
             if (gattCharacteristic != null) {
-                gattCharacteristic.value = obj.toString().toByteArray()
+                gattCharacteristic!!.value = obj.toString().toByteArray()
                 bluetoothLeService!!.writeCharacteristic(gattCharacteristic)
-            } else {
-                toast(getString(R.string.no_gatt))
             }
         }
 
         btnData.setOnClickListener {
             if (isReceivingData) {
-                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic, false);
+                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic!!, false);
                 isReceivingData = false;
                 btnData.text = getString(R.string.bt_data_on);
                 tvData.setText(R.string.no_data);
                 tvArray.setText(R.string.no_data);
             } else {
-                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic, true);
+                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic!!, true);
                 isReceivingData = true;
                 btnData.text = getString(R.string.bt_data_off);
             }
@@ -179,7 +174,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val lvClickListener =
-        AdapterView.OnItemClickListener { parent, view, position, id -> // Gerät aus dem Listview auswählen
+        AdapterView.OnItemClickListener { parent, view, position, id ->
+            // Gerät aus dem Listview auswählen
             if (isScanning) {
                 scanner.stopScan(scanCallback)
                 isScanning = false
@@ -251,6 +247,7 @@ class MainActivity : AppCompatActivity() {
         // Aufräumen
         scanner.stopScan(scanCallback)
         bluetoothLeService!!.disconnect()
+        bluetoothLeService!!.close()
         unbindService(serviceConnection)
         bluetoothLeService = null
     }
@@ -271,49 +268,60 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    private fun makeGattUpdateIntentFilter(): IntentFilter? {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED)
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED)
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_ESP32_CHARACTERISTIC_DISCOVERED)
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE)
+        return intentFilter
+    }
+
     private val gattUpdateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
             val action = intent.action
-            if (BluetoothLeService.ACTION_GATT_CONNECTED == action) {
-                isConnected = true
-                tvConnected.setText(R.string.connected)
-                btnData.isEnabled = true
-                btnLED.isEnabled = true
-                btnLEDFlash.isEnabled = true
-                btnDiscoverDevices.isEnabled = false
-                Log.i(TAG, "connected")
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED == action) {
-                isConnected = false
-                tvConnected.setText(R.string.disconnected)
-                btnData.isEnabled = false
-                btnLED.isEnabled = false
-                btnLEDFlash.isEnabled = false
-                btnDiscoverDevices.isEnabled = true
-                Log.i(TAG, "disconnected")
-            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED == action) {
-                Log.i(TAG, "services discovered")
-                // alle Services und Characteristics im Log aussgeben
-                for (gattService in bluetoothLeService!!.getSupportedGattServices()!!) {
-                    // Wir merken uns die Characteristic, über die wir kommunizieren
-                    if (gattService!!.uuid.toString() == BluetoothLeService.GATT_SERVICE_UUID) {
-                        gattCharacteristic = gattService.getCharacteristic(
-                                UUID.fromString(BluetoothLeService.GATT_CHARACTERISTIC_UUID))
-                        Log.i(TAG, "GATT_SERVICE_UUID gefunden")
-                    }
-                    Log.i(TAG, "Gatt Service: " + gattService!!.uuid.toString())
-                    for (gattCharacteristic in gattService.characteristics) {
-                        Log.i(TAG, "Gatt Characteristic: " + gattCharacteristic.uuid.toString())
-                    }
-                }
-            } else if (BluetoothLeService.ACTION_DATA_AVAILABLE == action) {
-                // neue Daten verfügbar
-                Log.i(TAG, "Data available")
-                val bytes: ByteArray = gattCharacteristic.value
-                // byte[] to string
-                val s = String(bytes)
-                parseJSONData(s)
+            when (action) {
+                BluetoothLeService.ACTION_GATT_CONNECTED -> onConnect()
+                BluetoothLeService.ACTION_GATT_DISCONNECTED -> onDisconnect()
+                BluetoothLeService.ACTION_GATT_ESP32_CHARACTERISTIC_DISCOVERED
+                    -> onGattCharacteristicDiscovered()
+                BluetoothLeService.ACTION_DATA_AVAILABLE -> onDataAvailable()
             }
         }
+    }
+
+    private fun onConnect() {
+        isConnected = true
+        tvConnected.setText(R.string.connected)
+        btnData.isEnabled = true
+        btnLED.isEnabled = true
+        btnLEDFlash.isEnabled = true
+        btnDiscoverDevices.isEnabled = false
+        Log.i(TAG, "connected")
+    }
+
+    private fun onDisconnect() {
+        isConnected = false
+        tvConnected.setText(R.string.disconnected)
+        btnData.isEnabled = false
+        btnLED.isEnabled = false
+        btnLEDFlash.isEnabled = false
+        btnDiscoverDevices.isEnabled = true
+        Log.i(TAG, "disconnected")
+    }
+
+    private fun onGattCharacteristicDiscovered() {
+        gattCharacteristic = bluetoothLeService?.getGattCharacteristic()
+    }
+
+    private fun onDataAvailable() {
+        // neue Daten verfügbar
+        Log.i(TAG, "Data available")
+        val bytes: ByteArray = gattCharacteristic!!.value
+        // byte[] to string
+        val s = String(bytes)
+        parseJSONData(s)
     }
 
     private fun parseJSONData(jsonString : String) {
@@ -327,16 +335,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e : JSONException) {
             e.printStackTrace()
         }
-    }
-
-
-    private fun makeGattUpdateIntentFilter(): IntentFilter? {
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED)
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED)
-        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED)
-        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE)
-        return intentFilter
     }
 }
 
