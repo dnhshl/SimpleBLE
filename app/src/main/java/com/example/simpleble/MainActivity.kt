@@ -59,7 +59,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
         btnConnect.isEnabled = false
         btnData.isEnabled = false
         btnLED.isEnabled = false
@@ -118,31 +117,17 @@ class MainActivity : AppCompatActivity() {
         btnLED.setOnClickListener {
             val obj = JSONObject()
             isOnLED = !isOnLED
-            ledFlashing = false
             // Werte setzen
             if (isOnLED) {
                 btnLED.text = getString(R.string.bt_led_off)
                 tvLED.text = getString(R.string.led_on)
-                btnLEDFlash.text = getString(R.string.led_flash_on)
-                tvFlash.text = getString(R.string.flash_off)
-                try{
-                    obj.put("LED", "H")
-                    obj.put("LEDBlinken", false)
-                }catch (e: IOException){
-                    e.printStackTrace()
-                    toast(e.localizedMessage!!)
-                }
+                obj.put("LED", "H")
             } else {
                 btnLED.text = getString(R.string.bt_led_on)
                 tvLED.text = getString(R.string.led_off)
-                try {
-                    obj.put("LED", "L")
-                    obj.put("LEDBlinken", false)
-                }catch (e: IOException) {
-                    e.printStackTrace()
-                    toast(e.localizedMessage!!)
-                }
+                obj.put("LED", "L")
             }
+            obj.put("LEDBlinken", if (ledFlashing) true else false)
 
             // Senden
             if (gattCharacteristic != null) {
@@ -156,30 +141,16 @@ class MainActivity : AppCompatActivity() {
         btnLEDFlash.setOnClickListener {
             val obj = JSONObject()
             ledFlashing = !ledFlashing
-            isOnLED = false
             if(ledFlashing) {
-                try {
-                    obj.put("LEDBlinken", true)
-                    obj.put("LED", "L")
-                    btnLEDFlash.text = getString(R.string.led_flash_off)
-                    tvFlash.text = getString(R.string.flash_on)
-                    btnLED.text = getString(R.string.bt_led_on)
-                    tvLED.text = getString(R.string.led_off)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    toast(e.localizedMessage!!)
-                }
+                obj.put("LEDBlinken", true)
+                btnLEDFlash.text = getString(R.string.led_flash_off)
+                tvFlash.text = getString(R.string.flash_on)
             }else{
-                try {
-                    obj.put("LEDBlinken", false)
-                    obj.put("LED", "L")
-                    btnLEDFlash.text = getString(R.string.led_flash_on)
-                    tvFlash.text = getString(R.string.flash_off)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    toast(e.localizedMessage!!)
-                }
+                obj.put("LEDBlinken", false)
+                btnLEDFlash.text = getString(R.string.led_flash_on)
+                tvFlash.text = getString(R.string.flash_off)
             }
+            obj.put("LED", if (isOnLED) "H" else "L")
 
             // Senden
             if (gattCharacteristic != null) {
@@ -243,7 +214,11 @@ class MainActivity : AppCompatActivity() {
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            val deviceInfo = """${result.device.name}${result.device.address}""".trimIndent()
+            // Wenn Devicename nicht ESP32 enthält, mache nichts
+            if (result.device.name == null) return
+            if (!result.device.name.contains("ESP32")) return
+
+            val deviceInfo = """${result.device.name} ${result.device.address}""".trimIndent()
             Log.i(TAG, "DeviceFound: $deviceInfo")
 
             // gefundenes Gerät der Liste hinzufügen, wenn es noch nicht aufgeführt ist
@@ -317,11 +292,8 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "disconnected")
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED == action) {
                 Log.i(TAG, "services discovered")
-
-
                 // alle Services und Characteristics im Log aussgeben
                 for (gattService in bluetoothLeService!!.getSupportedGattServices()!!) {
-
                     // Wir merken uns die Characteristic, über die wir kommunizieren
                     if (gattService!!.uuid.toString() == BluetoothLeService.GATT_SERVICE_UUID) {
                         gattCharacteristic = gattService.getCharacteristic(
@@ -339,7 +311,6 @@ class MainActivity : AppCompatActivity() {
                 val bytes: ByteArray = gattCharacteristic.value
                 // byte[] to string
                 val s = String(bytes)
-                toast(s)
                 parseJSONData(s)
             }
         }
@@ -349,17 +320,9 @@ class MainActivity : AppCompatActivity() {
         try {
             val obj = JSONObject(jsonString)
             //extrahieren des Objektes data
-            val dataObj = obj.getInt("poti")
-
-            tvData.text = dataObj.toString()
-
+            tvData.text = obj.getString("ledstatus").toString()
             //Array Ausgabe
-            val parentArray = obj.getJSONArray("potiArray");
-            val value1 = parentArray.getInt(0);
-            val value2 = parentArray.getInt(1);
-            val value3 = parentArray.getInt(2);
-            tvArray.text = "$value1 , $value2 , $value3"
-
+            tvArray.text = obj.getJSONArray("potiArray").toString()
 
         } catch (e : JSONException) {
             e.printStackTrace()
