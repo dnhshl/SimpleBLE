@@ -48,7 +48,7 @@ class BluetoothLeService : Service() {
                 intentAction = ACTION_GATT_CONNECTED
                 mConnectionState = STATE_CONNECTED
                 broadcastUpdate(intentAction)
-                //mBluetoothGatt!!.requestMtu(517)
+
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
                 refreshDeviceCache(mBluetoothGatt!!, true)
@@ -248,6 +248,8 @@ class BluetoothLeService : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
+        mBluetoothGatt!!.requestMtu(517)
+        Thread.sleep(100)    // required for Samsung Devices
         mBluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
         if (UUID.fromString(GATT_CHARACTERISTIC_UUID).equals(characteristic.uuid)) {
             val descriptor = characteristic.getDescriptor(

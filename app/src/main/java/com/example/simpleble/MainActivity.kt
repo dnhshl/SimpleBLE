@@ -329,9 +329,9 @@ class MainActivity : AppCompatActivity() {
         try {
             val obj = JSONObject(jsonString)
             //extrahieren des Objektes data
-            tvData.text = obj.getString("s").toString()
+            tvData.text = obj.getString("ledstatus").toString()
             //Array Ausgabe
-            tvArray.text = obj.getInt("p").toString()
+            tvArray.text = obj.getJSONArray("potiarray").toString()
 
         } catch (e : JSONException) {
             e.printStackTrace()
