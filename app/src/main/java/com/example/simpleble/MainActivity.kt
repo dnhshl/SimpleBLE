@@ -321,6 +321,7 @@ class MainActivity : AppCompatActivity() {
         val bytes: ByteArray = gattCharacteristic!!.value
         // byte[] to string
         val s = String(bytes)
+        Log.i(TAG, "Data received $s")
         parseJSONData(s)
     }
 
@@ -328,9 +329,9 @@ class MainActivity : AppCompatActivity() {
         try {
             val obj = JSONObject(jsonString)
             //extrahieren des Objektes data
-            tvData.text = obj.getString("ledstatus").toString()
+            tvData.text = obj.getString("s").toString()
             //Array Ausgabe
-            tvArray.text = obj.getJSONArray("potiArray").toString()
+            tvArray.text = obj.getInt("p").toString()
 
         } catch (e : JSONException) {
             e.printStackTrace()
