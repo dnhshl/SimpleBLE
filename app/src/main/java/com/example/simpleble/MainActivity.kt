@@ -158,15 +158,15 @@ class MainActivity : AppCompatActivity() {
 
         btnData.setOnClickListener {
             if (isReceivingData) {
-                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic!!, false);
+                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic!!, false)
                 isReceivingData = false;
-                btnData.text = getString(R.string.bt_data_on);
-                tvData.setText(R.string.no_data);
-                tvArray.setText(R.string.no_data);
+                btnData.text = getString(R.string.bt_data_on)
+                tvData.setText(R.string.no_data)
+                tvArray.setText(R.string.no_data)
             } else {
-                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic!!, true);
-                isReceivingData = true;
-                btnData.text = getString(R.string.bt_data_off);
+                bluetoothLeService!!.setCharacteristicNotification(gattCharacteristic!!, true)
+                isReceivingData = true
+                btnData.text = getString(R.string.bt_data_off)
             }
         }
 
@@ -196,10 +196,10 @@ class MainActivity : AppCompatActivity() {
             val turnBTOn = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(turnBTOn, 1)
         }
-        registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter());
+        registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter())
         if (bluetoothLeService != null && isConnected) {
-            var result = bluetoothLeService!!.connect(deviceAddress);
-            Log.d(TAG, "Connect request result=" + result);
+            val result = bluetoothLeService!!.connect(deviceAddress)
+            Log.d(TAG, "Connect request result=" + result)
         }
     }
 
@@ -269,7 +269,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun makeGattUpdateIntentFilter(): IntentFilter? {
+    private fun makeGattUpdateIntentFilter(): IntentFilter {
         val intentFilter = IntentFilter()
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED)
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED)
@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
             //extrahieren des Objektes data
             tvData.text = obj.getString("ledstatus").toString()
             //Array Ausgabe
-            tvArray.text = obj.getJSONArray("potiarray").toString()
+            tvArray.text = obj.getJSONArray("potiArray").toString()
 
         } catch (e : JSONException) {
             e.printStackTrace()
