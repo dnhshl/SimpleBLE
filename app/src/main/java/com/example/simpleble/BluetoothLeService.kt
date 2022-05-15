@@ -48,7 +48,7 @@ class BluetoothLeService : Service() {
                 intentAction = ACTION_GATT_CONNECTED
                 mConnectionState = STATE_CONNECTED
                 broadcastUpdate(intentAction)
-
+                //mBluetoothGatt!!.requestMtu(517)
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
                 refreshDeviceCache(mBluetoothGatt!!, true)
@@ -277,9 +277,9 @@ class BluetoothLeService : Service() {
     // Speziell bei Verwendung vom ESP32
     fun getGattCharacteristic(): BluetoothGattCharacteristic? {
         for (gattService in getSupportedGattServices()!!) {
-            if (gattService!!.uuid.toString() == BluetoothLeService.GATT_SERVICE_UUID) {
+            if (gattService!!.uuid.toString() == GATT_SERVICE_UUID) {
                 return gattService.getCharacteristic(
-                    UUID.fromString(BluetoothLeService.GATT_CHARACTERISTIC_UUID))
+                    UUID.fromString(GATT_CHARACTERISTIC_UUID))
             }
         }
         return null

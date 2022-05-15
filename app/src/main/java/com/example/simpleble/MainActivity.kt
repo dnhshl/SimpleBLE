@@ -3,6 +3,7 @@ package com.example.simpleble
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -57,6 +58,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Check to see if the BLE feature is available.
+        packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) }?.also {
+            Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
+            finish()
+        }
+
+
         setContentView(R.layout.activity_main)
 
         btnConnect.isEnabled = false
@@ -64,22 +73,17 @@ class MainActivity : AppCompatActivity() {
         btnLED.isEnabled = false
         btnLEDFlash.isEnabled = false
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if(bluetoothAdapter == null)
-        {
-            toast(getString(R.string.bt_not_available))
-            finish()
+        val bluetoothManager: BluetoothManager = getSystemService(BluetoothManager::class.java)
+        bluetoothAdapter = bluetoothManager.getAdapter()
+
+        checkBTPermission()
+
+        if (bluetoothAdapter?.isEnabled == false) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, 0)
         }
 
-        if (!packageManager.hasSystemFeature(
-                PackageManager.FEATURE_BLUETOOTH_LE
-            ))
-        {
-            toast(getString(R.string.ble_not_supported))
-            finish()
-        }
-
-        scanner = bluetoothAdapter.bluetoothLeScanner
+        scanner = bluetoothAdapter!!.bluetoothLeScanner
 
         // BluetoothLe Service starten
         val gattServiceIntent = Intent(this, BluetoothLeService::class.java)
@@ -87,7 +91,6 @@ class MainActivity : AppCompatActivity() {
         bindService(gattServiceIntent, serviceConnection, BIND_AUTO_CREATE)
 
         btnDiscoverDevices.setOnClickListener {
-            checkBTPermission()
 
             if (!isScanning) { // Suche ist nicht gestartet
                 scanner.startScan(scanCallback)
@@ -173,6 +176,8 @@ class MainActivity : AppCompatActivity() {
         listview.onItemClickListener = lvClickListener
     }
 
+    private fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
+
     private val lvClickListener =
         AdapterView.OnItemClickListener { parent, view, position, id ->
             // Gerät aus dem Listview auswählen
@@ -214,7 +219,7 @@ class MainActivity : AppCompatActivity() {
             if (result.device.name == null) return
             if (!result.device.name.contains("ESP32")) return
 
-            val deviceInfo = """${result.device.name} ${result.device.address}""".trimIndent()
+            val deviceInfo = "${result.device.name} ${result.device.address}".trimIndent()
             Log.i(TAG, "DeviceFound: $deviceInfo")
 
             // gefundenes Gerät der Liste hinzufügen, wenn es noch nicht aufgeführt ist
@@ -231,12 +236,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkBTPermission() {
         var permissionCheck = checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION")
-        permissionCheck += checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION")
+        permissionCheck += checkSelfPermission("Manifest.permission.BLUETOOTH_SCAN")
+        permissionCheck += checkSelfPermission("Manifest.permission.BLUETOOTH_CONNECT")
+        //permissionCheck += checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION")
         if (permissionCheck != 0) {
             requestPermissions(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                    //Manifest.permission.ACCESS_COARSE_LOCATION
                 ), 1001
             )
         }
